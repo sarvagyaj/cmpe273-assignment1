@@ -25,6 +25,7 @@ public class LibraryService extends Service<LibraryServiceConfiguration> {
 	/** Root API */
 	environment.addResource(RootResource.class);
 	/** Books APIs */
-	environment.addResource(BookResource.class);
+	//environment.addResource(BookResource.class);
+	environment.addResource(new BookResource());
     }
 }

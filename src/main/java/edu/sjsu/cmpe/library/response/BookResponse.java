@@ -1,16 +1,15 @@
-package edu.sjsu.cmpe.library.domain;
+package edu.sjsu.cmpe.library.response;
 
-import java.util.ArrayList;
 import java.util.Date;
-
-import org.hibernate.validator.constraints.NotEmpty;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Book {
+import edu.sjsu.cmpe.library.dto.LinkDto;
+
+public class BookResponse {
 	private long isbn;
-	@NotEmpty
 	private String title;
 
 	@JsonProperty("publication-date")
@@ -22,49 +21,21 @@ public class Book {
 	private int num_pages;
 
 	private String status;
-	@NotEmpty
-	private ArrayList<Author> authors;
-	private ArrayList<Review> reviews;
+	private List<LinkDto> reviews;
+	private List<LinkDto> authors;
 
-	public Book() {
-	}
-
-	public Book(long isbn, String title, Date date, int num_pages, String status) {
-		this.isbn = isbn;
-		this.title = title;
-		this.publication_date = date;
-		this.num_pages = num_pages;
-		this.status = status;
-		// this.authors = new ArrayList<String>(authorsList);
-
-	}
-
-	/**
-	 * @return the isbn
-	 */
 	public long getIsbn() {
 		return isbn;
 	}
 
-	/**
-	 * @param isbn
-	 *            the isbn to set
-	 */
 	public void setIsbn(long isbn) {
 		this.isbn = isbn;
 	}
 
-	/**
-	 * @return the title
-	 */
 	public String getTitle() {
 		return title;
 	}
 
-	/**
-	 * @param title
-	 *            the title to set
-	 */
 	public void setTitle(String title) {
 		this.title = title;
 	}
@@ -101,21 +72,19 @@ public class Book {
 		this.status = status;
 	}
 
-	public ArrayList<Author> getAuthors() {
-		return authors;
-	}
-
-	public void setAuthors(ArrayList<Author> author) {
-		this.authors = author;
-	}
-
-	public ArrayList<Review> getReviews() {
+	public List<LinkDto> getReviews() {
 		return reviews;
 	}
 
-	public void setReviews(ArrayList<Review> reviews) {
+	public void setReviews(List<LinkDto> reviews) {
 		this.reviews = reviews;
 	}
-	
-	
+
+	public List<LinkDto> getAuthors() {
+		return authors;
+	}
+
+	public void setAuthors(List<LinkDto> authors) {
+		this.authors = authors;
+	}
 }

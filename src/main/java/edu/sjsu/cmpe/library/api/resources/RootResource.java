@@ -28,6 +28,7 @@ public class RootResource {
 	links.addLink(new LinkDto("create-book", "/books", "POST"));
 
 	return Response.ok(links).build();
+	
     }
 }
 
