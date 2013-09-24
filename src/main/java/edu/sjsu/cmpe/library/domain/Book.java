@@ -3,6 +3,7 @@ package edu.sjsu.cmpe.library.domain;
 import java.util.ArrayList;
 import java.util.Date;
 
+import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -34,7 +35,8 @@ public class Book {
 	@Pattern(regexp = "available|checked-out|in-queue|lost")
 	private String status = "available";
 
-	@NotEmpty
+	@NotEmpty(message = "author list cannot be empty")
+	@Valid
 	private ArrayList<Author> authors;
 
 	private ArrayList<Review> reviews;

@@ -136,7 +136,7 @@ public class BookResource {
 			bookDto.getBook().setStatus(status);
 			return Response.ok(bookDto.getLinks()).build();
 		}
-		String message = "Not a valid status value";
+		String message = "status can only be available|checked-out|in-queue|lost";
 		return Response.status(404).entity(message).build();
 	}
 
