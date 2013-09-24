@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import edu.sjsu.cmpe.library.domain.Review;
 
-@JsonPropertyOrder({"review"})
+@JsonPropertyOrder({ "review" })
 public class ReviewDto extends LinksDto {
 	private Review review;
 
@@ -15,5 +15,5 @@ public class ReviewDto extends LinksDto {
 	public void setReview(Review review) {
 		this.review = review;
 	}
-	
+
 }

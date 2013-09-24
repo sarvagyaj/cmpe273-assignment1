@@ -10,22 +10,22 @@ import edu.sjsu.cmpe.library.config.LibraryServiceConfiguration;
 
 public class LibraryService extends Service<LibraryServiceConfiguration> {
 
-    public static void main(String[] args) throws Exception {
-	new LibraryService().run(args);
-    }
+	public static void main(String[] args) throws Exception {
+		new LibraryService().run(args);
+	}
 
-    @Override
-    public void initialize(Bootstrap<LibraryServiceConfiguration> bootstrap) {
-	bootstrap.setName("library-service");
-    }
+	@Override
+	public void initialize(Bootstrap<LibraryServiceConfiguration> bootstrap) {
+		bootstrap.setName("library-service");
+	}
 
-    @Override
-    public void run(LibraryServiceConfiguration configuration,
-	    Environment environment) throws Exception {
-	/** Root API */
-	environment.addResource(RootResource.class);
-	/** Books APIs */
-	//environment.addResource(BookResource.class);
-	environment.addResource(new BookResource());
-    }
+	@Override
+	public void run(LibraryServiceConfiguration configuration,
+			Environment environment) throws Exception {
+		/** Root API */
+		environment.addResource(RootResource.class);
+		/** Books APIs */
+		// environment.addResource(BookResource.class);
+		environment.addResource(new BookResource());
+	}
 }

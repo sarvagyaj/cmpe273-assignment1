@@ -1,8 +1,11 @@
 package edu.sjsu.cmpe.library.domain;
 
+import org.hibernate.validator.constraints.NotEmpty;
 
 public class Author {
 	private long authorID;
+
+	@NotEmpty
 	private String name;
 
 	public Author() {

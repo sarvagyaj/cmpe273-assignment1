@@ -17,6 +17,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.hibernate.validator.constraints.NotEmpty;
+
 import com.yammer.dropwizard.jersey.params.LongParam;
 import com.yammer.metrics.annotation.Timed;
 
@@ -35,8 +37,6 @@ import edu.sjsu.cmpe.library.response.GetBook;
 import edu.sjsu.cmpe.library.response.ReviewResponse;
 import edu.sjsu.cmpe.library.util.LibraryUtil;
 
-//import org.codehaus.jackson;
-
 @Path("/v1/books")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -48,7 +48,11 @@ public class BookResource {
 	}
 
 	@POST
-	public Response createBook(Book requestBook) {
+	public Response createBook(@Valid Book requestBook) {
+		if (requestBook == null) {
+			String message = "Book provided in payload should not be null";
+			return Response.status(403).entity(message).build();
+		}
 		long isbn = isbnCounter.incrementAndGet();
 		requestBook.setIsbn(isbn);
 
@@ -81,7 +85,6 @@ public class BookResource {
 		bookDto.addLink(new LinkDto("create-review", "/books/"
 				+ requestBook.getIsbn(), "POST"));
 		LibraryDAO.getBookMap().put(isbn, bookDto);
-		// return Response.ok(bookDto.getLinks()).build();
 		return Response.status(201).entity(bookDto.getLinks()).build();
 
 	}
@@ -89,39 +92,52 @@ public class BookResource {
 	@GET
 	@Path("/{isbn}")
 	@Timed(name = "view-book")
-	public Response getBookByIsbn(@PathParam("isbn") LongParam isbn) {
+	public Response getBookByIsbn(@Valid @PathParam("isbn") LongParam isbn) {
 		BookDto bookDto = LibraryDAO.getBookMap().get(isbn.get());
-
+		if (bookDto == null) {
+			String message = "Given isbn is not present in the system. Please enter valid isbn.";
+			return Response.status(404).entity(message).build();
+		}
 		BookResponse newBook = LibraryUtil.getBookResponse(bookDto.getBook());
-
 		GetBook getBook = new GetBook();
 		getBook.setBook(newBook);
 		getBook.setLinks(LibraryDAO.getBookMap().get(isbn.get()).getLinks());
-
 		return Response.ok(getBook).build();
+
 	}
 
 	@DELETE
 	@Path("/{isbn}")
-	public Response deleteBookByIsbn(@PathParam("isbn") LongParam isbn) {
+	public Response deleteBookByIsbn(@Valid @PathParam("isbn") LongParam isbn) {
+		if (!LibraryDAO.getBookMap().containsKey(isbn.get())) {
+			String message = "Given isbn is not present in the system. Please enter valid isbn.";
+			return Response.status(404).entity(message).build();
+		}
 		LibraryDAO.getBookMap().remove(isbn.get());
+		LibraryDAO.getAuthorMap().remove(isbn.get());
+		LibraryDAO.getReviewMap().remove(isbn.get());
 		LinkDto link = new LinkDto("create-book", "/books", "POST");
 		return Response.ok(link).build();
+
 	}
 
 	@PUT
 	@Path("/{isbn}")
 	public Response updateBookByIsbn(@Valid @PathParam("isbn") LongParam isbn,
-			@QueryParam("status") String status) {
+			@Valid @NotEmpty @QueryParam("status") String status) {
 		BookDto bookDto = LibraryDAO.getBookMap().get(isbn.get());
-		if (bookDto != null) {
+		if (bookDto == null) {
+			String message = "No book exist with given ISBN.";
+			return Response.status(404).entity(message).build();
+		} else if (status.equalsIgnoreCase("available")
+				|| status.equalsIgnoreCase("lost")
+				|| status.equalsIgnoreCase("checked-out")
+				|| status.equalsIgnoreCase("in-queue")) {
 			bookDto.getBook().setStatus(status);
 			return Response.ok(bookDto.getLinks()).build();
-		} else {
-			String message = "Please enter correct isbn";
-			return Response.status(404).entity(message).build();
 		}
-
+		String message = "Not a valid status value";
+		return Response.status(404).entity(message).build();
 	}
 
 	@GET
@@ -130,15 +146,15 @@ public class BookResource {
 			@Valid @PathParam("id") int authorID) {
 		List<AuthorDto> authorDtoList = LibraryDAO.getAuthorMap().get(
 				isbn.get());
-		if (authorDtoList != null && authorID > 0
-				&& authorID <= authorDtoList.size()) {
-			AuthorDto authorDto = authorDtoList.get(authorID - 1);
-			return Response.ok(authorDto).build();
-		} else {
-			String message = "Invalid ISBN or AuthorID";
+		if (authorDtoList == null) {
+			String message = "ISBN does not exist.";
+			return Response.status(404).entity(message).build();
+		} else if (authorID < 0 || authorID > authorDtoList.size()) {
+			String message = "AuthorID does not exist.";
 			return Response.status(404).entity(message).build();
 		}
-
+		AuthorDto authorDto = authorDtoList.get(authorID - 1);
+		return Response.ok(authorDto).build();
 	}
 
 	@GET
@@ -148,34 +164,38 @@ public class BookResource {
 		List<Author> authorList = new ArrayList<Author>();
 		List<AuthorDto> authorDtoList = LibraryDAO.getAuthorMap().get(
 				isbn.get());
-		if (authorDtoList != null) {
-			for (AuthorDto authorDto : authorDtoList) {
-				Author author = authorDto.getAuthor();
-				authorList.add(author);
-			}
-			authorResponse.setAuthors(authorList);
-			authorResponse.setLinks(new LinksDto());
-			return Response.ok(authorResponse).build();
-		} else {
-			String message = "Invalid ISBN";
+		if (authorDtoList == null) {
+			String message = "ISBN does not exist";
 			return Response.status(404).entity(message).build();
 		}
+		for (AuthorDto authorDto : authorDtoList) {
+			Author author = authorDto.getAuthor();
+			authorList.add(author);
+		}
+		authorResponse.setAuthors(authorList);
+		authorResponse.setLinks(new LinksDto());
+		return Response.ok(authorResponse).build();
 
 	}
 
 	@POST
 	@Path("/{isbn}/reviews")
-	public Response createBookReview(Review requestReview,
-			@PathParam("isbn") LongParam isbn) {
+	public Response createBookReview(@Valid Review requestReview,
+			@Valid @PathParam("isbn") LongParam isbn) {
 		List<ReviewDto> reviewDtoList;
 		ReviewDto reviewDto = new ReviewDto();
 		int reviewID = 0;
 		if (LibraryDAO.getReviewMap().containsKey(isbn.get())) {
 			reviewID = LibraryDAO.getReviewMap().get(isbn.get()).size();
-			reviewDtoList = LibraryDAO.getReviewMap().get(isbn.get()); 
+			reviewDtoList = LibraryDAO.getReviewMap().get(isbn.get());
 		} else {
 			reviewDtoList = new ArrayList<ReviewDto>();
-			LibraryDAO.getBookMap().get(isbn.get()).addLink(new LinkDto("view-all-reviews", "/books/"+isbn.get()+"/reviews", "GET"));
+			LibraryDAO
+					.getBookMap()
+					.get(isbn.get())
+					.addLink(
+							new LinkDto("view-all-reviews", "/books/"
+									+ isbn.get() + "/reviews", "GET"));
 		}
 		reviewID = reviewID + 1;
 
@@ -188,43 +208,53 @@ public class BookResource {
 
 		return Response.status(201).entity(reviewDto.getLinks()).build();
 	}
-	
+
 	@GET
 	@Path("/{isbn}/reviews/{id}")
 	public Response getReviewById(@Valid @PathParam("isbn") LongParam isbn,
 			@Valid @PathParam("id") int reviewID) {
 		List<ReviewDto> reviewDtoList = LibraryDAO.getReviewMap().get(
 				isbn.get());
-		if (reviewDtoList != null && reviewID > 0
-				&& reviewID <= reviewDtoList.size()) {
-			ReviewDto reviewDto = reviewDtoList.get(reviewID - 1);
-			return Response.ok(reviewDto).build();
-		} else {
-			String message = "Invalid ISBN or ReviewID";
+		if (!LibraryDAO.getBookMap().containsKey(isbn.get())) {
+			String message = "Book does not exist.";
+			return Response.status(404).entity(message).build();
+		} else if (reviewDtoList == null) {
+			String message = "There are no reviews for this book at this time.";
+			return Response.status(404).entity(message).build();
+		} else if (reviewID < 0 || reviewID > reviewDtoList.size()) {
+			String message = "Review does not exist.";
 			return Response.status(404).entity(message).build();
 		}
+		ReviewDto reviewDto = reviewDtoList.get(reviewID - 1);
+		return Response.ok(reviewDto).build();
 
 	}
 
 	@GET
 	@Path("/{isbn}/reviews")
 	public Response getAllReviewByIsbn(@Valid @PathParam("isbn") LongParam isbn) {
-		ReviewResponse reviewResponse = new ReviewResponse();
-		List<Review> reviewList = new ArrayList<Review>();
+
 		List<ReviewDto> reviewDtoList = LibraryDAO.getReviewMap().get(
 				isbn.get());
-		if (reviewDtoList != null) {
-			for (ReviewDto reviewDto : reviewDtoList) {
-				Review review = reviewDto.getReview();
-				reviewList.add(review);
-			}
-			reviewResponse.setReviews(reviewList);
-			reviewResponse.setLinks(new LinksDto());
-			return Response.ok(reviewResponse).build();
-		} else {
-			String message = "Invalid ISBN";
+		if (!LibraryDAO.getBookMap().containsKey(isbn.get())) {
+			String message = "Book does not exist.";
+			return Response.status(404).entity(message).build();
+		} else if (reviewDtoList == null) {
+			String message = "There are no reviews at this time for this book.";
 			return Response.status(404).entity(message).build();
 		}
+
+		ReviewResponse reviewResponse = new ReviewResponse();
+		List<Review> reviewList = new ArrayList<Review>();
+
+		for (ReviewDto reviewDto : reviewDtoList) {
+			Review review = reviewDto.getReview();
+			reviewList.add(review);
+		}
+
+		reviewResponse.setReviews(reviewList);
+		reviewResponse.setLinks(new LinksDto());
+		return Response.ok(reviewResponse).build();
 
 	}
 }

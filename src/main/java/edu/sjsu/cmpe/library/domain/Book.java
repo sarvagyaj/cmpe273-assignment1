@@ -3,6 +3,10 @@ package edu.sjsu.cmpe.library.domain;
 import java.util.ArrayList;
 import java.util.Date;
 
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+
 import org.hibernate.validator.constraints.NotEmpty;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -10,33 +14,41 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Book {
 	private long isbn;
-	@NotEmpty
+
+	@NotEmpty(message = "title cannot be null or empty")
+	@JsonProperty
 	private String title;
 
 	@JsonProperty("publication-date")
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "MM/dd/yyyy")
+	@NotNull(message = "publication-date cannot be empty")
 	private Date publication_date;
+
 	private String language;
 
 	@JsonProperty("num-pages")
-	private int num_pages;
+	@Min(0)
+	private int num_pages = 0;
 
-	private String status;
+	@NotNull(message = "status cannot be null or empty if present")
+	@Pattern(regexp = "available|checked-out|in-queue|lost")
+	private String status = "available";
+
 	@NotEmpty
 	private ArrayList<Author> authors;
+
 	private ArrayList<Review> reviews;
 
 	public Book() {
+		super();
 	}
 
-	public Book(long isbn, String title, Date date, int num_pages, String status) {
+	public Book(long isbn, String title, Date publication_date, String status) {
+		super();
 		this.isbn = isbn;
 		this.title = title;
-		this.publication_date = date;
-		this.num_pages = num_pages;
+		this.publication_date = publication_date;
 		this.status = status;
-		// this.authors = new ArrayList<String>(authorsList);
-
 	}
 
 	/**
@@ -116,6 +128,5 @@ public class Book {
 	public void setReviews(ArrayList<Review> reviews) {
 		this.reviews = reviews;
 	}
-	
-	
+
 }

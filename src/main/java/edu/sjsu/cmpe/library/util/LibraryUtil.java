@@ -32,7 +32,6 @@ public class LibraryUtil {
 		} else {
 			bookResponse.setReviews(new ArrayList<LinkDto>());
 		}
-		
 
 		List<LinkDto> authorLinks = new ArrayList<LinkDto>();
 		Iterator<AuthorDto> authorIterator = LibraryDAO.getAuthorMap()

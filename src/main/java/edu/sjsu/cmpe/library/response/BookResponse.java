@@ -4,11 +4,15 @@ import java.util.Date;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import edu.sjsu.cmpe.library.dto.LinkDto;
 
+@JsonInclude(Include.NON_NULL)
 public class BookResponse {
+
 	private long isbn;
 	private String title;
 
@@ -17,10 +21,12 @@ public class BookResponse {
 	private Date publication_date;
 	private String language;
 
+	@JsonInclude(Include.NON_DEFAULT)
 	@JsonProperty("num-pages")
-	private int num_pages;
+	private int num_pages = 0;
 
 	private String status;
+
 	private List<LinkDto> reviews;
 	private List<LinkDto> authors;
 
